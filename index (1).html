@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Manga App</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0b1220;
+  color: #fff;
+}
+
+/* 🔷 APP BAR */
+.appbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background: linear-gradient(90deg, #020617, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  z-index: 100;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.4);
+  transition: transform 0.3s ease;
+}
+
+.appbar.hide {
+  transform: translateY(-100%);
+}
+
+.appbar img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.appbar h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+/* 🔷 GRID */
+.grid {
+  margin-top: 70px;
+  margin-bottom: 70px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
+  gap: 12px;
+  padding: 12px;
+}
+
+.card {
+  background: #1e293b;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card img {
+  width: 50%;
+  height: 50px;
+  object-fit: cover;
+  background: #000;
+}
+
+.card span {
+  display: block;
+  padding: 8px;
+  font-size: 13px;
+}
+
+/* 🔷 IFRAME */
+iframe {
+  position: fixed;
+  top: 0;
+  bottom: 60px;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: none;
+  background: #fff;
+  z-index: 5;
+}
+
+/* 🔷 LOADER */
+#loader {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  color: #38bdf8;
+  display: none;
+  z-index: 200;
+}
+
+/* 🔷 BOTTOM NAV */
+nav {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #020617;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  box-shadow: 0 -2px 15px rgba(0,0,0,0.5);
+  z-index: 100;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  fill: #94a3b8;
+  width: 36px;
+  height: 36px;
+  font-size: 26px;
+}
+
+.nav-btn.active {
+  fill: #38bdf8;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 🔷 HEADER -->
+<header class="appbar" id="appbar">
+  <img src="min.png">
+  <h1>MangaToor</h1>
+</header>
+
+<!-- 🔷 LOADER -->
+<div id="loader">Loading...</div>
+
+<!-- 🔷 GRID -->
+<div class="grid" id="grid"></div>
+
+<!-- 🔷 VIEWER -->
+<iframe id="viewer"></iframe>
+
+<!-- 🔷 NAV -->
+<nav>
+  <button class="nav-btn active" onclick="goHome()">🏯</button>
+
+  <button class="nav-btn">📩</button>
+
+  <button class="nav-btn">🪙</button>
+</nav>
+
+<script>
+
+const sites = [
+  {name:"Manga Starz", url:"https://manga-starz.net"},
+  {name:"Hijala", url:"https://hijala.com/"},
+  {name:"ProComics", url:"https://procomic.net"},
+  {name:"Wave Teamy", url:"https://waveteamy.com/"},
+  {name:"Lava Scans", url:"https://lavascans.com/"},
+  {name:"Olympus Staff", url:"https://olympustaff.com/"},
+  {name:"Manga Tales", url:"https://mangatales.com/"},
+  {name:"Area Scans", url:"https://ar.areascans.org/"},
+  {name:"Azora Moon", url:"https://azoramoon.com/"},
+  {name:"Despair Manga", url:"https://despair-manga.net/"}
+];
+
+const grid = document.getElementById("grid");
+const viewer = document.getElementById("viewer");
+const loader = document.getElementById("loader");
+const appbar = document.getElementById("appbar");
+
+let lastScroll = 0;
+
+/* 🔷 create cards */
+sites.forEach(site => {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const img = document.createElement("img");
+  img.src = "https://www.google.com/s2/favicons?sz=128&domain=" + site.url;
+
+  const title = document.createElement("span");
+  title.textContent = site.name;
+
+  card.appendChild(img);
+  card.appendChild(title);
+
+  card.onclick = () => openSite(site.url);
+
+  grid.appendChild(card);
+});
+
+/* 🔷 open site */
+function openSite(url) {
+  viewer.style.display = "block";
+  loader.style.display = "block";
+  viewer.src = url;
+}
+
+/* 🔷 home */
+function goHome() {
+  viewer.style.display = "none";
+  viewer.src = "";
+}
+
+/* 🔷 loader */
+viewer.onload = () => {
+  loader.style.display = "none";
+};
+
+/* 🔷 hide header on scroll */
+window.addEventListener("scroll", () => {
+  const current = window.pageYOffset;
+
+  if (current > lastScroll && current > 50) {
+    appbar.classList.add("hide");
+  } else {
+    appbar.classList.remove("hide");
+  }
+
+  lastScroll = current;
+});
+
+/* 🔷 block risky links inside iframe */
+viewer.addEventListener("load", () => {
+  try {
+    const doc = viewer.contentDocument;
+    const host = new URL(viewer.src).hostname;
+
+    doc.querySelectorAll("a").forEach(a => {
+      const href = a.getAttribute("href");
+      if (!href) return;
+
+      const blocked = ["intent:", "tel:", "mailto:", "whatsapp:", "market:", "javascript:"];
+
+      if (blocked.some(b => href.startsWith(b))) {
+        a.onclick = e => e.preventDefault();
+      }
+
+      if (!href.includes(host)) {
+        a.onclick = e => e.preventDefault();
+      }
+    });
+
+    doc.defaultView.open = () => null;
+
+  } catch (e) {
+    console.log("Protected iframe mode");
+  }
+});
+
+</script>
+
+</body>
+</html>
