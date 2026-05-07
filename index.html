@@ -4,8 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Manga App</title>
-
 <style>
+* { box-sizing: border-box; }
+
 body {
   margin: 0;
   font-family: Arial;
@@ -41,6 +42,33 @@ body {
 .appbar h1 {
   font-size: 18px;
   margin: 0;
+  flex: 1;
+}
+
+/* زر رجوع */
+#back-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #38bdf8;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* شريط URL */
+#url-bar {
+  display: none;
+  flex: 1;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 5px 10px;
+  color: #94a3b8;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 🔷 GRID */
@@ -48,7 +76,7 @@ body {
   margin-top: 70px;
   margin-bottom: 70px;
   display: grid;
-  grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
   padding: 12px;
 }
@@ -60,47 +88,87 @@ body {
   cursor: pointer;
   transition: 0.3s;
   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  text-decoration: none;
+  color: inherit;
+  display: block;
 }
 
 .card:hover {
   transform: translateY(-5px);
+  background: #263548;
 }
 
 .card img {
-  width: 50%;
-  height: 50px;
-  object-fit: cover;
-  background: #000;
+  width: 100%;
+  height: 80px;
+  object-fit: contain;
+  background: #0f172a;
+  padding: 10px 0;
 }
 
 .card span {
   display: block;
   padding: 8px;
   font-size: 13px;
+  color: #cbd5e1;
 }
 
-/* 🔷 IFRAME */
-iframe {
-  position: fixed;
-  top: 0;
-  bottom: 60px;
-  width: 100%;
-  height: 100%;
-  border: none;
+/* 🔷 صفحة الانتقال */
+#transition-screen {
   display: none;
-  background: #fff;
-  z-index: 5;
+  position: fixed;
+  inset: 0;
+  top: 60px;
+  background: #0b1220;
+  z-index: 50;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
 }
 
-/* 🔷 LOADER */
-#loader {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%,-50%);
+#transition-screen img {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+}
+
+#transition-screen p {
+  color: #94a3b8;
+  font-size: 14px;
+  margin: 0;
+}
+
+#transition-screen .site-name {
   color: #38bdf8;
-  display: none;
-  z-index: 200;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #1e293b;
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* زر الفتح */
+#open-btn {
+  background: #38bdf8;
+  color: #0b1220;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 8px;
 }
 
 /* 🔷 BOTTOM NAV */
@@ -123,6 +191,7 @@ nav {
   width: 36px;
   height: 36px;
   font-size: 26px;
+  cursor: pointer;
 }
 
 .nav-btn.active {
@@ -135,129 +204,128 @@ nav {
 
 <!-- 🔷 HEADER -->
 <header class="appbar" id="appbar">
-  <img src="min.png">
-  <h1>MangaToor</h1>
+  <button id="back-btn" onclick="goHome()">←</button>
+  <img src="min.png" id="appbar-logo">
+  <h1 id="appbar-title">MangaToor</h1>
+  <span id="url-bar"></span>
 </header>
-
-<!-- 🔷 LOADER -->
-<div id="loader">Loading...</div>
 
 <!-- 🔷 GRID -->
 <div class="grid" id="grid"></div>
 
-<!-- 🔷 VIEWER -->
-<iframe id="viewer" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+<!-- 🔷 صفحة الانتقال -->
+<div id="transition-screen">
+  <img id="ts-icon" src="">
+  <span class="site-name" id="ts-name"></span>
+  <div class="spinner"></div>
+  <p>جاري فتح الموقع...</p>
+  <button id="open-btn" onclick="openNow()">فتح الآن ↗</button>
+</div>
 
 <!-- 🔷 NAV -->
 <nav>
   <button class="nav-btn active" onclick="goHome()">🏯</button>
-
   <button class="nav-btn">📩</button>
-
   <button class="nav-btn">🪙</button>
 </nav>
 
 <script>
-
 const sites = [
-  {name:"Manga Starz", url:"https://manga-starz.net"},
-  {name:"Hijala", url:"https://hijala.com/"},
-  {name:"ProComics", url:"https://procomic.net"},
-  {name:"Wave Teamy", url:"https://waveteamy.com/"},
-  {name:"Lava Scans", url:"https://lavascans.com/"},
-  {name:"Olympus Staff", url:"https://olympustaff.com/"},
-  {name:"Manga Tales", url:"https://mangatales.com/"},
-  {name:"Area Scans", url:"https://ar.areascans.org/"},
-  {name:"Azora Moon", url:"https://azoramoon.com/"},
-  {name:"Despair Manga", url:"https://despair-manga.net/"}
+  {name:"Manga Starz",  url:"https://manga-starz.net"},
+  {name:"Hijala",       url:"https://hijala.com/"},
+  {name:"ProComics",    url:"https://procomic.net"},
+  {name:"Wave Teamy",   url:"https://waveteamy.com/"},
+  {name:"Lava Scans",   url:"https://lavascans.com/"},
+  {name:"Olympus Staff",url:"https://olympustaff.com/"},
+  {name:"Manga Tales",  url:"https://mangatales.com/"},
+  {name:"Area Scans",   url:"https://ar.areascans.org/"},
+  {name:"Azora Moon",   url:"https://azoramoon.com/"},
+  {name:"Despair Manga",url:"https://despair-manga.net/"}
 ];
 
-const grid = document.getElementById("grid");
-const viewer = document.getElementById("viewer");
-const loader = document.getElementById("loader");
-const appbar = document.getElementById("appbar");
+const grid          = document.getElementById("grid");
+const appbar        = document.getElementById("appbar");
+const backBtn       = document.getElementById("back-btn");
+const urlBar        = document.getElementById("url-bar");
+const appbarTitle   = document.getElementById("appbar-title");
+const appbarLogo    = document.getElementById("appbar-logo");
+const tsScreen      = document.getElementById("transition-screen");
+const tsIcon        = document.getElementById("ts-icon");
+const tsName        = document.getElementById("ts-name");
 
+let currentURL = "";
+let redirectTimer = null;
 let lastScroll = 0;
 
-/* 🔷 create cards */
+/* 🔷 إنشاء الكروت */
 sites.forEach(site => {
   const card = document.createElement("div");
   card.className = "card";
 
-  const img = document.createElement("img");
-  img.src = "https://www.google.com/s2/favicons?sz=128&domain=" + site.url;
+  const favicon = `https://www.google.com/s2/favicons?sz=128&domain=${site.url}`;
 
-  const title = document.createElement("span");
-  title.textContent = site.name;
+  card.innerHTML = `
+    <img src="${favicon}" alt="${site.name}" onerror="this.style.opacity=0.3">
+    <span>${site.name}</span>
+  `;
 
-  card.appendChild(img);
-  card.appendChild(title);
-
-  card.onclick = () => openSite(site.url);
-
+  card.onclick = () => openSite(site.url, site.name, favicon);
   grid.appendChild(card);
 });
 
-/* 🔷 open site */
-function openSite(url) {
-  viewer.style.display = "block";
-  loader.style.display = "block";
-  viewer.src = url;
+/* 🔷 فتح الموقع مع صفحة انتقالية */
+function openSite(url, name, icon) {
+  currentURL = url;
+
+  // تحديث الهيدر
+  backBtn.style.display = "block";
+  urlBar.style.display  = "block";
+  urlBar.textContent    = url.replace("https://","");
+  appbarTitle.style.display = "none";
+  appbarLogo.style.display  = "none";
+
+  // إظهار صفحة الانتقال
+  tsIcon.src  = icon;
+  tsName.textContent = name;
+  tsScreen.style.display = "flex";
+
+  // فتح تلقائي بعد 1.5 ثانية
+  clearTimeout(redirectTimer);
+  redirectTimer = setTimeout(() => {
+    window.open(url, "_blank");
+    goHome();
+  }, 1500);
 }
 
-/* 🔷 home */
+/* 🔷 فتح فوري عند ضغط الزر */
+function openNow() {
+  clearTimeout(redirectTimer);
+  window.open(currentURL, "_blank");
+  goHome();
+}
+
+/* 🔷 الرجوع للرئيسية */
 function goHome() {
-  viewer.style.display = "none";
-  viewer.src = "";
+  clearTimeout(redirectTimer);
+  tsScreen.style.display = "none";
+  backBtn.style.display  = "none";
+  urlBar.style.display   = "none";
+  appbarTitle.style.display = "block";
+  appbarLogo.style.display  = "block";
+  currentURL = "";
 }
 
-/* 🔷 loader */
-viewer.onload = () => {
-  loader.style.display = "none";
-};
-
-/* 🔷 hide header on scroll */
+/* 🔷 إخفاء الهيدر عند التمرير */
 window.addEventListener("scroll", () => {
   const current = window.pageYOffset;
-
   if (current > lastScroll && current > 50) {
     appbar.classList.add("hide");
   } else {
     appbar.classList.remove("hide");
   }
-
   lastScroll = current;
 });
-
-/* 🔷 block risky links inside iframe */
-viewer.addEventListener("load", () => {
-  try {
-    const doc = viewer.contentDocument;
-    const host = new URL(viewer.src).hostname;
-
-    doc.querySelectorAll("a").forEach(a => {
-      const href = a.getAttribute("href");
-      if (!href) return;
-
-      const blocked = ["intent:", "tel:", "mailto:", "whatsapp:", "market:", "javascript:"];
-
-      if (blocked.some(b => href.startsWith(b))) {
-        a.onclick = e => e.preventDefault();
-      }
-
-      if (!href.includes(host)) {
-        a.onclick = e => e.preventDefault();
-      }
-    });
-
-    doc.defaultView.open = () => null;
-
-  } catch (e) {
-    console.log("Protected iframe mode");
-  }
-});
-
 </script>
 
 </body>
-</html>
+    </html>
